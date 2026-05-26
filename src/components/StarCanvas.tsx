@@ -21,7 +21,7 @@ function starClass(size: number): string {
 
 export default function StarCanvas({ stars, constellations, onConstellationComplete, onConstellationClick }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { transform, onMouseDown, onMouseMove, onMouseUp, onWheel } = useCanvas()
+  const { transform, onMouseDown, onMouseMove, onMouseUp, onWheel, zoomBy, isDragging } = useCanvas(containerRef)
 
   const [mode, setMode] = useState<Mode>('view')
   const [selectedStars, setSelectedStars] = useState<string[]>([])
@@ -29,10 +29,6 @@ export default function StarCanvas({ stars, constellations, onConstellationCompl
   const [hoverStar, setHoverStar] = useState<string | null>(null)
 
   const starMap = new Map(stars.map((s) => [s.id, s]))
-
-  // ドラッグとクリックを区別する
-  const mouseDownPos = useRef({ x: 0, y: 0 })
-  const isDragging = useRef(false)
 
   const handleStarClick = useCallback(
     (e: React.MouseEvent, starId: string) => {
@@ -70,19 +66,6 @@ export default function StarCanvas({ stars, constellations, onConstellationCompl
     setMode('view')
   }
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    mouseDownPos.current = { x: e.clientX, y: e.clientY }
-    isDragging.current = false
-    onMouseDown(e)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const dx = e.clientX - mouseDownPos.current.x
-    const dy = e.clientY - mouseDownPos.current.y
-    if (Math.sqrt(dx * dx + dy * dy) > 4) isDragging.current = true
-    onMouseMove(e)
-  }
-
   const handleMouseUp = () => {
     onMouseUp()
   }
@@ -94,15 +77,21 @@ export default function StarCanvas({ stars, constellations, onConstellationCompl
       {/* ツールバー */}
       <div className="toolbar">
         {mode === 'view' ? (
-          <button className="btn-draw" onClick={() => setMode('draw')}>
-            ✦ 星座を作る
-          </button>
+          <>
+            <button className="btn-draw" onClick={() => setMode('draw')}>
+              ✦ 星座を作る
+            </button>
+            <div className="zoom-btns">
+              <button className="btn-zoom" onClick={() => zoomBy(1.25)} aria-label="拡大">＋</button>
+              <button className="btn-zoom" onClick={() => zoomBy(0.8)}  aria-label="縮小">－</button>
+            </div>
+          </>
         ) : (
           <>
             <span className="draw-hint">
               {selectedStars.length === 0
-                ? '最初の星をクリック'
-                : `${selectedStars.length}個選択中 — 次の星をクリック`}
+                ? '最初の星をタップ'
+                : `${selectedStars.length}個選択中 — 次の星をタップ`}
             </span>
             <button
               className="btn-finish"
@@ -122,8 +111,8 @@ export default function StarCanvas({ stars, constellations, onConstellationCompl
       <div
         ref={containerRef}
         className={`canvas-container ${mode === 'draw' ? 'draw-mode' : ''}`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onWheel={onWheel}
