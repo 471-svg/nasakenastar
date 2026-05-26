@@ -129,8 +129,26 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
     function onTouchEnd(e: TouchEvent) {
       e.preventDefault()
       if (e.touches.length < 2) pinchDist.current = 0
-      if (e.touches.length === 0) dragging.current = false
-      else if (e.touches.length === 1) {
+
+      if (e.touches.length === 0) {
+        // タップ（ドラッグなし）なら、タッチ位置の要素に click イベントを発火させる
+        // (preventDefault でブラウザ生成の click がキャンセルされているため)
+        if (!isDragging.current && e.changedTouches.length === 1) {
+          const touch = e.changedTouches[0]
+          const target = document.elementFromPoint(touch.clientX, touch.clientY)
+          if (target) {
+            target.dispatchEvent(new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              clientX: touch.clientX,
+              clientY: touch.clientY,
+              screenX: touch.screenX,
+              screenY: touch.screenY,
+            }))
+          }
+        }
+        dragging.current = false
+      } else if (e.touches.length === 1) {
         dragging.current = true
         isDragging.current = false
         lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
