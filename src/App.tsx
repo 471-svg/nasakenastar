@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import StarCanvas from './components/StarCanvas'
 import ConstellationForm from './components/ConstellationForm'
 import ConstellationPanel from './components/ConstellationPanel'
 import MythCard from './components/MythCard'
 import { useConstellations } from './hooks/useConstellations'
-import { initAuth } from './firebase'
+import { IS_SUPABASE_CONFIGURED } from './supabase'
 import { buildCatalogStars } from './data/realStars'
 import { ConstellationLine, Constellation } from './types'
 
 const STARS = buildCatalogStars()
 
-// Firebase未設定時のデモ用ローカルストレージフォールバック
+// Supabase未設定時のデモ用ローカルストレージフォールバック
 function useLocalConstellations() {
   const [constellations, setConstellations] = useState<Constellation[]>(() => {
     try {
@@ -37,24 +37,14 @@ function useLocalConstellations() {
   return { constellations, loading: false, addConstellation }
 }
 
-const IS_FIREBASE_CONFIGURED =
-  import.meta.env.VITE_FIREBASE_PROJECT_ID &&
-  import.meta.env.VITE_FIREBASE_PROJECT_ID !== 'YOUR_PROJECT_ID'
-
 export default function App() {
-  const [userId, setUserId] = useState<string>('local-' + Math.random().toString(36).slice(2))
+  const userId = useRef<string>('user-' + Math.random().toString(36).slice(2)).current
   const [draft, setDraft] = useState<{ lines: ConstellationLine[]; starIds: string[] } | null>(null)
   const [viewing, setViewing] = useState<Constellation | null>(null)
 
-  const firebase = useConstellations()
+  const remote = useConstellations()
   const local = useLocalConstellations()
-  const { constellations, addConstellation } = IS_FIREBASE_CONFIGURED ? firebase : local
-
-  useEffect(() => {
-    if (IS_FIREBASE_CONFIGURED) {
-      initAuth(setUserId)
-    }
-  }, [])
+  const { constellations, addConstellation } = IS_SUPABASE_CONFIGURED ? remote : local
 
   const handleConstellationComplete = (lines: ConstellationLine[], starIds: string[]) => {
     setDraft({ lines, starIds })
@@ -75,11 +65,11 @@ export default function App() {
 
   return (
     <div className="app">
-      {!IS_FIREBASE_CONFIGURED && (
+      {!IS_SUPABASE_CONFIGURED && (
         <div className="demo-banner">
-          デモモード — Firebase未設定のためローカル保存です。
-          <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer">
-            Firebase設定方法 →
+          デモモード — Supabase未設定のためローカル保存です。
+          <a href="https://supabase.com" target="_blank" rel="noreferrer">
+            Supabase設定方法 →
           </a>
         </div>
       )}
