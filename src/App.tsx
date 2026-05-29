@@ -48,7 +48,7 @@ export default function App() {
 
   const remote = useConstellations()
   const local = useLocalConstellations()
-  const { constellations, addConstellation } = IS_SUPABASE_CONFIGURED ? remote : local
+  const { constellations, addConstellation, deleteConstellation } = IS_SUPABASE_CONFIGURED ? remote : { ...local, deleteConstellation: (id: string) => local.constellations.filter(c => c.id !== id) }
 
   // 存在する色の一覧（重複なし・出現順）
   const availableColors = useMemo(() => {
@@ -97,12 +97,13 @@ export default function App() {
         handleConstellationComplete={handleConstellationComplete}
         handleFormSubmit={handleFormSubmit}
         setDraft={setDraft}
+        deleteConstellation={deleteConstellation}
       />} />
     </Routes>
   )
 }
 
-function StarApp({ constellations, availableColors, filterColors, setFilterColors, draft, viewing, setViewing, handleConstellationComplete, handleFormSubmit, setDraft }: {
+function StarApp({ constellations, availableColors, filterColors, setFilterColors, draft, viewing, setViewing, handleConstellationComplete, handleFormSubmit, setDraft, deleteConstellation }: {
   constellations: Constellation[]
   availableColors: string[]
   filterColors: string[]
@@ -113,6 +114,7 @@ function StarApp({ constellations, availableColors, filterColors, setFilterColor
   handleConstellationComplete: (lines: import('./types').ConstellationLine[], starIds: string[]) => void
   handleFormSubmit: (name: string, myth: string, color: string) => void
   setDraft: (d: null) => void
+  deleteConstellation: (id: string) => void
 }) {
   return (
     <div className="app">
@@ -157,6 +159,7 @@ function StarApp({ constellations, availableColors, filterColors, setFilterColor
         <MythCard
           constellation={viewing}
           onClose={() => setViewing(null)}
+          onDelete={deleteConstellation}
         />
       )}
     </div>

@@ -1,14 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Constellation } from '../types'
 import { findIllustration } from '../data/illustrations'
 
 interface Props {
   constellation: Constellation
   onClose: () => void
+  onDelete: (id: string) => void
 }
 
-export default function MythCard({ constellation, onClose }: Props) {
+export default function MythCard({ constellation, onClose, onDelete }: Props) {
   const illus = findIllustration(constellation.name, constellation.myth ?? '')
+  const [confirming, setConfirming] = useState(false)
 
   // Escape キーで閉じる
   useEffect(() => {
@@ -16,6 +18,11 @@ export default function MythCard({ constellation, onClose }: Props) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
+
+  const handleDelete = () => {
+    onDelete(constellation.id)
+    onClose()
+  }
 
   return (
     <div className="myth-overlay" onClick={onClose}>
@@ -42,8 +49,23 @@ export default function MythCard({ constellation, onClose }: Props) {
           {constellation.myth || '（この星座にまつわる物語はまだ記されていない）'}
         </p>
 
-        <div className="myth-stars-count">
-          {constellation.starIds?.length ?? 0} つの星で結ばれた星座
+        <div className="myth-footer">
+          <span className="myth-stars-count">
+            {constellation.starIds?.length ?? 0} つの星で結ばれた星座
+          </span>
+
+          {/* 削除ボタン */}
+          {!confirming ? (
+            <button className="myth-delete" onClick={() => setConfirming(true)}>
+              🗑 削除
+            </button>
+          ) : (
+            <div className="myth-confirm">
+              <span>本当に削除しますか？</span>
+              <button className="myth-confirm-yes" onClick={handleDelete}>削除する</button>
+              <button className="myth-confirm-no" onClick={() => setConfirming(false)}>キャンセル</button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -84,7 +84,16 @@ export function useConstellations() {
     })
   }
 
-  return { constellations, loading, addConstellation }
+  async function deleteConstellation(id: string) {
+    // 楽観的削除
+    setConstellations((prev) => prev.filter((c) => c.id !== id))
+    const { error } = await supabase.from('constellations').delete().eq('id', id)
+    if (error) {
+      console.error('[Supabase] DELETE失敗:', error)
+    }
+  }
+
+  return { constellations, loading, addConstellation, deleteConstellation }
 }
 
 // DB のスネークケース → アプリのキャメルケース に変換

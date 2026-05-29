@@ -548,11 +548,75 @@ html, body, #root {
   font-weight: 300;
 }
 
+.myth-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .myth-stars-count {
   font-size: 11px;
   color: #44567a;
   letter-spacing: 0.08em;
-  text-align: right;
+}
+
+.myth-delete {
+  background: none;
+  border: 1px solid rgba(200, 80, 80, 0.3);
+  color: #aa6666;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Serif JP', serif;
+  white-space: nowrap;
+}
+.myth-delete:hover {
+  background: rgba(200, 80, 80, 0.12);
+  border-color: rgba(200, 80, 80, 0.6);
+  color: #e89090;
+}
+
+.myth-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.myth-confirm > span {
+  font-size: 12px;
+  color: #cc8888;
+}
+.myth-confirm-yes {
+  background: rgba(200, 60, 60, 0.25);
+  border: 1px solid rgba(200, 60, 60, 0.5);
+  color: #ffaaaa;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Serif JP', serif;
+}
+.myth-confirm-yes:hover {
+  background: rgba(200, 60, 60, 0.45);
+}
+.myth-confirm-no {
+  background: none;
+  border: 1px solid rgba(100, 120, 160, 0.3);
+  color: #8899bb;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Serif JP', serif;
+}
+.myth-confirm-no:hover {
+  background: rgba(100, 120, 160, 0.1);
 }
 
 /* ========= Form overlay ========= */
