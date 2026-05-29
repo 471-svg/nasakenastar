@@ -79,9 +79,7 @@ export function useConstellations() {
       created_at: newItem.createdAt,
     }).then(({ error }) => {
       if (error) {
-        console.error('保存失敗:', error)
-        // 失敗したらロールバック
-        setConstellations((prev) => prev.filter((c) => c.id !== newItem.id))
+        console.error('[Supabase] INSERT失敗:', JSON.stringify(error))
       }
     })
   }
