@@ -1,56 +1,29 @@
-import { useState, useRef, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Routes, Route, Link } from 'react-router-dom'
 import StarCanvas from './components/StarCanvas'
 import ConstellationForm from './components/ConstellationForm'
 import ConstellationPanel from './components/ConstellationPanel'
 import MythCard from './components/MythCard'
 import ColorFilter from './components/ColorFilter'
+import AuthButton from './components/AuthButton'
 import EventPage from './pages/EventPage'
+import ProfilePage from './pages/ProfilePage'
 import { useConstellations } from './hooks/useConstellations'
-import { IS_SUPABASE_CONFIGURED } from './supabase'
+import { useAuth } from './hooks/useAuth'
 import { buildCatalogStars } from './data/realStars'
 import { ConstellationLine, Constellation } from './types'
 
 const STARS = buildCatalogStars()
 
-// Supabase未設定時のデモ用ローカルストレージフォールバック
-function useLocalConstellations() {
-  const [constellations, setConstellations] = useState<Constellation[]>(() => {
-    try {
-      const saved = localStorage.getItem('constellations')
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
-    }
-  })
-
-  function addConstellation(params: Omit<Constellation, 'id' | 'createdAt'>) {
-    const c: Constellation = {
-      ...params,
-      id: Date.now().toString(),
-      createdAt: Date.now(),
-    }
-    setConstellations((prev) => {
-      const next = [c, ...prev]
-      localStorage.setItem('constellations', JSON.stringify(next))
-      return next
-    })
-  }
-
-  return { constellations, loading: false, addConstellation }
-}
-
 export default function App() {
-  const userId = useRef<string>('user-' + Math.random().toString(36).slice(2)).current
-  const [draft, setDraft] = useState<{ lines: ConstellationLine[]; starIds: string[] } | null>(null)
-  const [viewing, setViewing] = useState<Constellation | null>(null)
+  const { user, profile, loading: authLoading, signInWithGoogle, signOut } = useAuth()
+  const [draft, setDraft]           = useState<{ lines: ConstellationLine[]; starIds: string[] } | null>(null)
+  const [viewing, setViewing]       = useState<Constellation | null>(null)
   const [filterColors, setFilterColors] = useState<string[]>([])
+  const [loginPrompt, setLoginPrompt]   = useState(false)
 
-  const remote = useConstellations()
-  const local = useLocalConstellations()
-  const { constellations, addConstellation, deleteConstellation } = IS_SUPABASE_CONFIGURED ? remote : { ...local, deleteConstellation: (id: string) => local.constellations.filter(c => c.id !== id) }
+  const { constellations, addConstellation, deleteConstellation } = useConstellations()
 
-  // 存在する色の一覧（重複なし・出現順）
   const availableColors = useMemo(() => {
     const seen = new Set<string>()
     return constellations
@@ -58,7 +31,6 @@ export default function App() {
       .filter((color) => { if (seen.has(color)) return false; seen.add(color); return true })
   }, [constellations])
 
-  // フィルター適用済みの星座リスト
   const filteredConstellations = useMemo(() =>
     filterColors.length === 0
       ? constellations
@@ -67,101 +39,102 @@ export default function App() {
   )
 
   const handleConstellationComplete = (lines: ConstellationLine[], starIds: string[]) => {
+    if (!user) { setLoginPrompt(true); return }
     setDraft({ lines, starIds })
   }
 
   const handleFormSubmit = (name: string, myth: string, color: string) => {
-    if (!draft) return
+    if (!draft || !user) return
     addConstellation({
       name,
       myth,
       lines: draft.lines,
       starIds: draft.starIds,
       color,
-      authorId: userId,
+      authorId: user.id,
     })
-    setDraft(null)  // 即座にフォームを閉じる
+    setDraft(null)
   }
+
+  // 自分の星座かどうか
+  const isOwn = (c: Constellation) => !!user && c.authorId === user.id
 
   return (
     <Routes>
       <Route path="/event" element={<EventPage />} />
-      <Route path="/*" element={<StarApp
-        constellations={filteredConstellations}
-        availableColors={availableColors}
-        filterColors={filterColors}
-        setFilterColors={setFilterColors}
-        draft={draft}
-        viewing={viewing}
-        setViewing={setViewing}
-        handleConstellationComplete={handleConstellationComplete}
-        handleFormSubmit={handleFormSubmit}
-        setDraft={setDraft}
-        deleteConstellation={deleteConstellation}
-      />} />
-    </Routes>
-  )
-}
-
-function StarApp({ constellations, availableColors, filterColors, setFilterColors, draft, viewing, setViewing, handleConstellationComplete, handleFormSubmit, setDraft, deleteConstellation }: {
-  constellations: Constellation[]
-  availableColors: string[]
-  filterColors: string[]
-  setFilterColors: (c: string[]) => void
-  draft: { lines: import('./types').ConstellationLine[]; starIds: string[] } | null
-  viewing: Constellation | null
-  setViewing: (c: Constellation | null) => void
-  handleConstellationComplete: (lines: import('./types').ConstellationLine[], starIds: string[]) => void
-  handleFormSubmit: (name: string, myth: string, color: string) => void
-  setDraft: (d: null) => void
-  deleteConstellation: (id: string) => void
-}) {
-  return (
-    <div className="app">
-      {!IS_SUPABASE_CONFIGURED && (
-        <div className="demo-banner">
-          デモモード — Supabase未設定のためローカル保存です。
-          <a href="https://supabase.com" target="_blank" rel="noreferrer">
-            Supabase設定方法 →
-          </a>
-        </div>
-      )}
-
-      <StarCanvas
-        stars={STARS}
-        constellations={constellations}
-        onConstellationComplete={handleConstellationComplete}
-        onConstellationClick={setViewing}
-      />
-
-      <ColorFilter
-        availableColors={availableColors}
-        selected={filterColors}
-        onChange={setFilterColors}
-      />
-
-      <ConstellationPanel
-        constellations={constellations}
-        onSelect={setViewing}
-      />
-
-      {/* イベントページへのリンク */}
-      <Link to="/event" className="event-link-btn">✦ Events</Link>
-
-      {draft && (
-        <ConstellationForm
-          onSubmit={handleFormSubmit}
-          onCancel={() => setDraft(null)}
-        />
-      )}
-
-      {viewing && (
-        <MythCard
-          constellation={viewing}
-          onClose={() => setViewing(null)}
+      <Route path="/user/:userId" element={
+        <ProfilePage
+          currentUserId={user?.id}
           onDelete={deleteConstellation}
         />
-      )}
-    </div>
+      } />
+      <Route path="/*" element={
+        <div className="app">
+          {/* 認証ボタン（右上） */}
+          <div className="auth-area">
+            <AuthButton
+              profile={profile}
+              loading={authLoading}
+              onLogin={signInWithGoogle}
+              onLogout={signOut}
+            />
+          </div>
+
+          <StarCanvas
+            stars={STARS}
+            constellations={filteredConstellations}
+            onConstellationComplete={handleConstellationComplete}
+            onConstellationClick={setViewing}
+          />
+
+          <ColorFilter
+            availableColors={availableColors}
+            selected={filterColors}
+            onChange={setFilterColors}
+          />
+
+          <ConstellationPanel
+            constellations={filteredConstellations}
+            onSelect={setViewing}
+          />
+
+          <Link to="/event" className="event-link-btn">✦ Events</Link>
+
+          {/* ログイン誘導 */}
+          {loginPrompt && (
+            <div className="myth-overlay" onClick={() => setLoginPrompt(false)}>
+              <div className="login-prompt" onClick={(e) => e.stopPropagation()}>
+                <button className="myth-close" onClick={() => setLoginPrompt(false)}>✕</button>
+                <div className="login-prompt-star">✦</div>
+                <h3>星座を刻むにはログインが必要です</h3>
+                <p>Googleアカウントでログインして、あなただけの星座を夜空に刻みましょう。</p>
+                <button
+                  className="login-prompt-btn"
+                  onClick={() => { setLoginPrompt(false); signInWithGoogle() }}
+                >
+                  Googleでログイン
+                </button>
+              </div>
+            </div>
+          )}
+
+          {draft && (
+            <ConstellationForm
+              onSubmit={handleFormSubmit}
+              onCancel={() => setDraft(null)}
+            />
+          )}
+
+          {viewing && (
+            <MythCard
+              constellation={viewing}
+              onClose={() => setViewing(null)}
+              onDelete={deleteConstellation}
+              showDelete={isOwn(viewing)}
+            />
+          )}
+        </div>
+      } />
+    </Routes>
   )
 }

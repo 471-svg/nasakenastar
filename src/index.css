@@ -54,6 +54,154 @@ html, body, #root {
   overflow: hidden;
 }
 
+/* ========= Auth ========= */
+.auth-area {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 60;
+}
+
+.auth-login-btn {
+  background: rgba(5, 12, 35, 0.85);
+  border: 1px solid rgba(180, 160, 100, 0.3);
+  color: var(--gold-light);
+  font-family: 'Noto Serif JP', serif;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+}
+.auth-login-btn:hover {
+  background: rgba(201, 168, 76, 0.12);
+  border-color: var(--gold);
+}
+
+.auth-user { position: relative; }
+
+.auth-avatar-btn {
+  background: none;
+  border: 2px solid rgba(180, 160, 100, 0.4);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.auth-avatar-btn:hover { border-color: var(--gold); }
+
+.auth-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.auth-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 16px;
+  color: var(--gold-light);
+  background: rgba(30, 40, 80, 0.8);
+}
+
+.auth-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+}
+.auth-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 61;
+  background: rgba(4, 10, 38, 0.97);
+  border: 1px solid rgba(180, 160, 100, 0.25);
+  border-radius: 12px;
+  padding: 8px 0;
+  min-width: 180px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  backdrop-filter: blur(12px);
+}
+.auth-menu-name {
+  padding: 8px 16px 10px;
+  font-size: 12px;
+  color: #8899bb;
+  border-bottom: 1px solid rgba(180,160,100,0.12);
+  margin-bottom: 4px;
+}
+.auth-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 16px;
+  font-size: 13px;
+  color: var(--text-light);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Noto Serif JP', serif;
+  transition: background 0.15s;
+}
+.auth-menu-item:hover { background: rgba(255,255,255,0.06); }
+.auth-menu-logout { color: #aa7777; }
+
+/* ── Login prompt ── */
+.login-prompt {
+  position: relative;
+  background: rgba(4, 10, 38, 0.97);
+  border: 1px solid rgba(180, 160, 100, 0.28);
+  border-radius: 18px;
+  padding: 48px 40px 40px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(80, 120, 255, 0.12);
+  animation: myth-in 0.25s ease-out;
+}
+.login-prompt-star {
+  font-size: 32px;
+  color: var(--gold);
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 8px var(--gold));
+}
+.login-prompt h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  color: var(--gold-light);
+  margin-bottom: 12px;
+  font-weight: 400;
+}
+.login-prompt p {
+  font-size: 13px;
+  color: #8899bb;
+  line-height: 1.8;
+  margin-bottom: 28px;
+}
+.login-prompt-btn {
+  background: linear-gradient(135deg, rgba(100,130,220,0.3), rgba(60,90,180,0.4));
+  border: 1px solid rgba(130,170,255,0.5);
+  color: #b8d0ff;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  padding: 11px 32px;
+  border-radius: 30px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+.login-prompt-btn:hover {
+  background: linear-gradient(135deg, rgba(100,130,220,0.5), rgba(60,90,180,0.6));
+  box-shadow: 0 0 16px rgba(100,140,255,0.3);
+}
+
 /* ========= Demo banner ========= */
 .demo-banner {
   position: fixed;
@@ -562,6 +710,25 @@ html, body, #root {
   letter-spacing: 0.08em;
 }
 
+/* ── MythCard author ── */
+.myth-author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: #8899bb;
+  font-size: 12px;
+  transition: color 0.2s;
+}
+.myth-author:hover { color: var(--text-light); }
+.myth-author-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.myth-author-icon { font-size: 10px; }
+
 .myth-delete {
   background: none;
   border: 1px solid rgba(200, 80, 80, 0.3);
@@ -754,6 +921,132 @@ html, body, #root {
 .btn-submit:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+/* ========= Profile page ========= */
+.profile-page {
+  min-height: 100vh;
+  background: var(--sky-dark);
+  color: var(--text-light);
+  font-family: 'Noto Serif JP', serif;
+}
+
+.profile-header {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 20px 32px;
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  position: relative;
+}
+.profile-avatar-wrap { flex-shrink: 0; }
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(180,160,100,0.3);
+}
+.profile-avatar--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  background: rgba(20, 30, 70, 0.8);
+  color: var(--gold-light);
+}
+.profile-info { flex: 1; }
+.profile-username {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--gold-light);
+  margin-bottom: 8px;
+}
+.profile-bio {
+  font-size: 13px;
+  color: #8899bb;
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+.profile-count {
+  font-size: 12px;
+  color: #445577;
+  letter-spacing: 0.06em;
+}
+.profile-edit-btn {
+  background: none;
+  border: 1px solid rgba(180,160,100,0.3);
+  color: #8899bb;
+  font-size: 12px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: 'Noto Serif JP', serif;
+  transition: all 0.2s;
+  position: absolute;
+  top: 40px;
+  right: 20px;
+}
+.profile-edit-btn:hover {
+  color: var(--gold-light);
+  border-color: var(--gold);
+}
+
+.profile-grid-section {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+}
+.profile-grid-title {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  color: #445577;
+  letter-spacing: 0.1em;
+  margin-bottom: 20px;
+  font-weight: 400;
+  border-top: 1px solid rgba(180,160,100,0.12);
+  padding-top: 20px;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+/* ── Constellation card ── */
+.ccard {
+  background: rgba(6, 14, 40, 0.8);
+  border: 1px solid color-mix(in srgb, var(--ccard-color) 25%, rgba(255,255,255,0.08));
+  border-radius: 12px;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+.ccard:hover {
+  border-color: color-mix(in srgb, var(--ccard-color) 60%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ccard-color) 20%, transparent);
+  transform: translateY(-2px);
+}
+.ccard-preview {
+  width: 100%;
+  aspect-ratio: 1;
+  background: rgba(2, 6, 20, 0.6);
+  padding: 4px;
+}
+.ccard-name {
+  font-size: 12px;
+  color: var(--text-light);
+  padding: 8px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Noto Serif JP', serif;
 }
 
 /* ========= Event link button (star page) ========= */

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Constellation } from '../types'
 import { findIllustration } from '../data/illustrations'
 
@@ -6,13 +7,13 @@ interface Props {
   constellation: Constellation
   onClose: () => void
   onDelete: (id: string) => void
+  showDelete?: boolean
 }
 
-export default function MythCard({ constellation, onClose, onDelete }: Props) {
+export default function MythCard({ constellation, onClose, onDelete, showDelete = true }: Props) {
   const illus = findIllustration(constellation.name, constellation.myth ?? '')
   const [confirming, setConfirming] = useState(false)
 
-  // Escape キーで閉じる
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -50,20 +51,36 @@ export default function MythCard({ constellation, onClose, onDelete }: Props) {
         </p>
 
         <div className="myth-footer">
+          {/* 著者リンク */}
+          {constellation.authorId && (
+            <Link
+              to={`/user/${constellation.authorId}`}
+              className="myth-author"
+              onClick={onClose}
+            >
+              {constellation.author?.avatarUrl
+                ? <img src={constellation.author.avatarUrl} alt="" className="myth-author-avatar" />
+                : <span className="myth-author-icon">✦</span>
+              }
+              <span>{constellation.author?.username ?? '星詠み人'}</span>
+            </Link>
+          )}
+
           <span className="myth-stars-count">
-            {constellation.starIds?.length ?? 0} つの星で結ばれた星座
+            {constellation.starIds?.length ?? 0} 星
           </span>
 
           {/* 削除ボタン */}
-          {!confirming ? (
+          {showDelete && !confirming && (
             <button className="myth-delete" onClick={() => setConfirming(true)}>
               🗑 削除
             </button>
-          ) : (
+          )}
+          {showDelete && confirming && (
             <div className="myth-confirm">
-              <span>本当に削除しますか？</span>
-              <button className="myth-confirm-yes" onClick={handleDelete}>削除する</button>
-              <button className="myth-confirm-no" onClick={() => setConfirming(false)}>キャンセル</button>
+              <span>削除しますか？</span>
+              <button className="myth-confirm-yes" onClick={handleDelete}>削除</button>
+              <button className="myth-confirm-no" onClick={() => setConfirming(false)}>戻る</button>
             </div>
           )}
         </div>

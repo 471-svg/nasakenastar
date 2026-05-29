@@ -2,23 +2,32 @@ export interface StarData {
   id: string
   x: number
   y: number
-  size: number      // 半径 (px)
-  twinkle: number   // アニメーション遅延
-  color?: string    // CSS 色 (B-V 由来)
+  size: number
+  twinkle: number
+  color?: string
 }
 
 export interface ConstellationLine {
-  from: string   // star id
-  to: string     // star id
+  from: string
+  to: string
 }
 
 export interface Constellation {
   id: string
   name: string
-  myth: string              // 神話的な説明
+  myth: string
   lines: ConstellationLine[]
   starIds: string[]
   color: string
   authorId: string
   createdAt: number
+  // プロフィール結合（オプション）
+  author?: Profile
+}
+
+export interface Profile {
+  id: string
+  username: string
+  bio: string
+  avatarUrl: string
 }
