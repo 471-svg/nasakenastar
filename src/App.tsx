@@ -1,9 +1,11 @@
 import { useState, useRef, useMemo } from 'react'
+import { Routes, Route, Link } from 'react-router-dom'
 import StarCanvas from './components/StarCanvas'
 import ConstellationForm from './components/ConstellationForm'
 import ConstellationPanel from './components/ConstellationPanel'
 import MythCard from './components/MythCard'
 import ColorFilter from './components/ColorFilter'
+import EventPage from './pages/EventPage'
 import { useConstellations } from './hooks/useConstellations'
 import { IS_SUPABASE_CONFIGURED } from './supabase'
 import { buildCatalogStars } from './data/realStars'
@@ -82,6 +84,37 @@ export default function App() {
   }
 
   return (
+    <Routes>
+      <Route path="/event" element={<EventPage />} />
+      <Route path="/*" element={<StarApp
+        constellations={filteredConstellations}
+        availableColors={availableColors}
+        filterColors={filterColors}
+        setFilterColors={setFilterColors}
+        draft={draft}
+        viewing={viewing}
+        setViewing={setViewing}
+        handleConstellationComplete={handleConstellationComplete}
+        handleFormSubmit={handleFormSubmit}
+        setDraft={setDraft}
+      />} />
+    </Routes>
+  )
+}
+
+function StarApp({ constellations, availableColors, filterColors, setFilterColors, draft, viewing, setViewing, handleConstellationComplete, handleFormSubmit, setDraft }: {
+  constellations: Constellation[]
+  availableColors: string[]
+  filterColors: string[]
+  setFilterColors: (c: string[]) => void
+  draft: { lines: import('./types').ConstellationLine[]; starIds: string[] } | null
+  viewing: Constellation | null
+  setViewing: (c: Constellation | null) => void
+  handleConstellationComplete: (lines: import('./types').ConstellationLine[], starIds: string[]) => void
+  handleFormSubmit: (name: string, myth: string, color: string) => void
+  setDraft: (d: null) => void
+}) {
+  return (
     <div className="app">
       {!IS_SUPABASE_CONFIGURED && (
         <div className="demo-banner">
@@ -94,7 +127,7 @@ export default function App() {
 
       <StarCanvas
         stars={STARS}
-        constellations={filteredConstellations}
+        constellations={constellations}
         onConstellationComplete={handleConstellationComplete}
         onConstellationClick={setViewing}
       />
@@ -106,9 +139,12 @@ export default function App() {
       />
 
       <ConstellationPanel
-        constellations={filteredConstellations}
+        constellations={constellations}
         onSelect={setViewing}
       />
+
+      {/* イベントページへのリンク */}
+      <Link to="/event" className="event-link-btn">✦ Events</Link>
 
       {draft && (
         <ConstellationForm
