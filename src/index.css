@@ -242,6 +242,99 @@ html, body, #root {
   }
 }
 
+/* ========= Color filter ========= */
+.color-filter {
+  position: fixed;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: rgba(5, 12, 35, 0.8);
+  border: 1px solid rgba(180, 160, 100, 0.2);
+  border-radius: 30px;
+  padding: 12px 8px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.cf-all {
+  background: none;
+  border: 1px solid rgba(180, 160, 100, 0.3);
+  color: var(--gold-light);
+  font-family: 'Noto Serif JP', serif;
+  font-size: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+  opacity: 0.6;
+}
+
+.cf-all--active {
+  opacity: 1;
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.15);
+  box-shadow: 0 0 8px rgba(201, 168, 76, 0.3);
+}
+
+.cf-all:hover {
+  opacity: 1;
+}
+
+.cf-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background-color: var(--dot-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  opacity: 0.7;
+  box-shadow: 0 0 6px var(--dot-color);
+}
+
+.cf-dot:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.cf-dot--active {
+  opacity: 1;
+  border-color: white;
+  transform: scale(1.2);
+  box-shadow: 0 0 12px var(--dot-color);
+}
+
+.cf-dot--dim {
+  opacity: 0.25;
+}
+
+@media (max-width: 600px) {
+  .color-filter {
+    left: 10px;
+    gap: 8px;
+    padding: 10px 6px;
+  }
+  .cf-dot {
+    width: 20px;
+    height: 20px;
+  }
+  .cf-all {
+    width: 26px;
+    height: 26px;
+  }
+}
+
 /* ========= Panel toggle ========= */
 .panel-toggle {
   position: fixed;

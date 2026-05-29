@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import StarCanvas from './components/StarCanvas'
 import ConstellationForm from './components/ConstellationForm'
 import ConstellationPanel from './components/ConstellationPanel'
 import MythCard from './components/MythCard'
+import ColorFilter from './components/ColorFilter'
 import { useConstellations } from './hooks/useConstellations'
 import { IS_SUPABASE_CONFIGURED } from './supabase'
 import { buildCatalogStars } from './data/realStars'
@@ -41,10 +42,27 @@ export default function App() {
   const userId = useRef<string>('user-' + Math.random().toString(36).slice(2)).current
   const [draft, setDraft] = useState<{ lines: ConstellationLine[]; starIds: string[] } | null>(null)
   const [viewing, setViewing] = useState<Constellation | null>(null)
+  const [filterColors, setFilterColors] = useState<string[]>([])
 
   const remote = useConstellations()
   const local = useLocalConstellations()
   const { constellations, addConstellation } = IS_SUPABASE_CONFIGURED ? remote : local
+
+  // 存在する色の一覧（重複なし・出現順）
+  const availableColors = useMemo(() => {
+    const seen = new Set<string>()
+    return constellations
+      .map((c) => c.color)
+      .filter((color) => { if (seen.has(color)) return false; seen.add(color); return true })
+  }, [constellations])
+
+  // フィルター適用済みの星座リスト
+  const filteredConstellations = useMemo(() =>
+    filterColors.length === 0
+      ? constellations
+      : constellations.filter((c) => filterColors.includes(c.color)),
+    [constellations, filterColors]
+  )
 
   const handleConstellationComplete = (lines: ConstellationLine[], starIds: string[]) => {
     setDraft({ lines, starIds })
@@ -76,13 +94,19 @@ export default function App() {
 
       <StarCanvas
         stars={STARS}
-        constellations={constellations}
+        constellations={filteredConstellations}
         onConstellationComplete={handleConstellationComplete}
         onConstellationClick={setViewing}
       />
 
+      <ColorFilter
+        availableColors={availableColors}
+        selected={filterColors}
+        onChange={setFilterColors}
+      />
+
       <ConstellationPanel
-        constellations={constellations}
+        constellations={filteredConstellations}
         onSelect={setViewing}
       />
 
