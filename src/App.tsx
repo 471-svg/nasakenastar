@@ -68,9 +68,9 @@ export default function App() {
     setDraft({ lines, starIds })
   }
 
-  const handleFormSubmit = async (name: string, myth: string, color: string) => {
+  const handleFormSubmit = (name: string, myth: string, color: string) => {
     if (!draft) return
-    await addConstellation({
+    addConstellation({
       name,
       myth,
       lines: draft.lines,
@@ -78,7 +78,7 @@ export default function App() {
       color,
       authorId: userId,
     })
-    setDraft(null)
+    setDraft(null)  // 即座にフォームを閉じる
   }
 
   return (

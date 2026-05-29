@@ -24,14 +24,18 @@ export function useConstellations() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'constellations' },
         (payload) => {
-          setConstellations((prev) => [toConstellation(payload.new), ...prev])
+          setConstellations((prev) => {
+            // 楽観的更新で既に追加済みの場合は重複しない
+            if (prev.some((c) => c.id === (payload.new as { id: string }).id)) return prev
+            return [toConstellation(payload.new), ...prev]
+          })
         }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'constellations' },
         (payload) => {
-          setConstellations((prev) => prev.filter((c) => c.id !== payload.old.id))
+          setConstellations((prev) => prev.filter((c) => c.id !== (payload.old as { id: string }).id))
         }
       )
       .subscribe()
@@ -41,7 +45,7 @@ export function useConstellations() {
     }
   }, [])
 
-  async function addConstellation(params: {
+  function addConstellation(params: {
     name: string
     myth: string
     lines: ConstellationLine[]
@@ -49,17 +53,37 @@ export function useConstellations() {
     color: string
     authorId: string
   }) {
-    const { error } = await supabase.from('constellations').insert({
+    const newItem: Constellation = {
       id: Date.now().toString(),
       name: params.name,
       myth: params.myth,
       lines: params.lines,
-      star_ids: params.starIds,
+      starIds: params.starIds,
       color: params.color,
-      author_id: params.authorId,
-      created_at: Date.now(),
+      authorId: params.authorId,
+      createdAt: Date.now(),
+    }
+
+    // 楽観的更新: DBの応答を待たずに即座に画面へ反映
+    setConstellations((prev) => [newItem, ...prev])
+
+    // バックグラウンドでDBに保存
+    supabase.from('constellations').insert({
+      id: newItem.id,
+      name: newItem.name,
+      myth: newItem.myth,
+      lines: newItem.lines,
+      star_ids: newItem.starIds,
+      color: newItem.color,
+      author_id: newItem.authorId,
+      created_at: newItem.createdAt,
+    }).then(({ error }) => {
+      if (error) {
+        console.error('保存失敗:', error)
+        // 失敗したらロールバック
+        setConstellations((prev) => prev.filter((c) => c.id !== newItem.id))
+      }
     })
-    if (error) throw error
   }
 
   return { constellations, loading, addConstellation }
