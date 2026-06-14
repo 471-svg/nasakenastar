@@ -48,7 +48,7 @@ export function useAuth() {
       .from('profiles')
       .insert({
         id: userId,
-        username: meta.full_name ?? meta.name ?? 'ユーザー',
+        username: '',  // 初回ログイン: 名前登録モーダルで設定させる
         bio: '',
         avatar_url: meta.avatar_url ?? meta.picture ?? '',
       })

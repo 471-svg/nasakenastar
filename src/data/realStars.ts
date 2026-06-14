@@ -398,6 +398,27 @@ function seededRand(seed: number) {
 export const CATALOG_WIDTH  = 8640   // 360 × 24 (px per degree)
 export const CATALOG_HEIGHT = 4320   // 180 × 24
 
+// 星雲クラスター生成
+function addNebulaCluster(
+  stars: StarData[],
+  rand: () => number,
+  cx: number, cy: number,
+  count: number,
+  rx: number, ry: number,
+  idPrefix: string,
+  tint: string = '#cce0ff',
+) {
+  for (let i = 0; i < count; i++) {
+    const angle = rand() * Math.PI * 2
+    const r = Math.sqrt(rand())   // 一様分布で円内に散らす
+    const x = cx + Math.cos(angle) * rx * r
+    const y = cy + Math.sin(angle) * ry * r
+    const bright = rand()
+    const size = bright < 0.04 ? 0.85 : bright < 0.18 ? 0.55 : 0.28
+    stars.push({ id: `${idPrefix}-${i}`, x, y, size, twinkle: rand() * 4, color: tint })
+  }
+}
+
 let cachedStars: StarData[] | null = null
 
 export function buildCatalogStars(): StarData[] {
@@ -405,7 +426,7 @@ export function buildCatalogStars(): StarData[] {
 
   const stars: StarData[] = []
   const rand = seededRand(20240601)
-  const seen = new Set<string>()   // 重複排除
+  const seen = new Set<string>()
 
   // ① BSC 実星データ
   for (let i = 0; i < BSC_DATA.length; i++) {
@@ -417,32 +438,34 @@ export function buildCatalogStars(): StarData[] {
     seen.add(key)
 
     stars.push({
-      id: `bsc-${i}`,
-      x,
-      y,
+      id: `bsc-${i}`, x, y,
       size: magToRadius(vmag),
       twinkle: rand() * 4,
       color: bvToColor(bv),
     })
   }
 
-  // ② 背景の淡い星をランダムに追加 (等級 5〜8 相当)
+  // ② 背景の淡い星
   const BG_COUNT = 5000
   for (let i = 0; i < BG_COUNT; i++) {
     const x = rand() * CATALOG_WIDTH
     const y = rand() * CATALOG_HEIGHT
-    const magOffset = rand()  // 0〜1 → 等級 5〜8
-    const size = magOffset < 0.3 ? 0.9 : magOffset < 0.7 ? 0.6 : 0.4
+    const m = rand()
+    const size = m < 0.08 ? 1.0 : m < 0.28 ? 0.65 : m < 0.60 ? 0.42 : 0.22
     const bv = rand() * 1.8 - 0.3
-    stars.push({
-      id: `bg-${i}`,
-      x,
-      y,
-      size,
-      twinkle: rand() * 5,
-      color: bvToColor(bv),
-    })
+    stars.push({ id: `bg-${i}`, x, y, size, twinkle: rand() * 5, color: bvToColor(bv) })
   }
+
+  // ③ 星雲クラスター (実際の星雲・星団の位置)
+  // キャンバス座標: x = (ra/24)*8640,  y = ((90-dec)/180)*4320
+
+  // オリオン大星雲 M42  RA=5.59h Dec=-5.39°
+  addNebulaCluster(stars, rand, 2012, 2289, 300, 420, 280, 'neb-m42', '#d4e8ff')
+  addNebulaCluster(stars, rand, 1364, 1580, 200, 300, 200, 'neb-m45', '#ddeeff')
+  addNebulaCluster(stars, rand, 6394, 2855, 600, 1200, 400, 'neb-sgr1', '#c8d8ff')
+  addNebulaCluster(stars, rand, 6502, 2737, 350, 700, 350, 'neb-sgr2', '#d0e0ff')
+  addNebulaCluster(stars, rand, 7452, 1123, 300, 700, 300, 'neb-cyg', '#c8d8ff')
+  addNebulaCluster(stars, rand, 5940, 2793, 400, 800, 350, 'neb-sco', '#c0d4ff')
 
   cachedStars = stars
   return stars

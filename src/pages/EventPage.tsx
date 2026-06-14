@@ -24,6 +24,11 @@ export default function EventPage() {
       {/* 管理者フォーム */}
       {showAdmin && <AdminForm onClose={() => setShowAdmin(false)} />}
 
+      {/* 告知フライヤー */}
+      <div className="event-flyer-wrap">
+        <img src="/bana-.png" alt="情けNIGHT プラネタリウム" className="event-flyer-img" />
+      </div>
+
       {/* イベント一覧 */}
       <main className="event-main">
         {loading && <p className="event-loading">読み込み中…</p>}

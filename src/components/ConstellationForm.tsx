@@ -1,8 +1,5 @@
 import { useState } from 'react'
-
-const COLORS = [
-  '#7eb8f7', '#f7c97e', '#f77eb8', '#7ef7b8', '#b87ef7', '#f77e7e', '#7ef7f7',
-]
+import { PLANET_COLORS } from '../data/planetColors'
 
 interface Props {
   onSubmit: (name: string, myth: string, color: string) => void
@@ -12,7 +9,7 @@ interface Props {
 export default function ConstellationForm({ onSubmit, onCancel }: Props) {
   const [name, setName] = useState('')
   const [myth, setMyth] = useState('')
-  const [color, setColor] = useState(COLORS[0])
+  const [color, setColor] = useState(PLANET_COLORS[0].color)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,7 +20,7 @@ export default function ConstellationForm({ onSubmit, onCancel }: Props) {
   return (
     <div className="form-overlay">
       <form className="constellation-form" onSubmit={handleSubmit}>
-        <h2>星座に名前をつける</h2>
+        <h2>星座を作る</h2>
 
         <label>
           <span>星座名</span>
@@ -49,15 +46,17 @@ export default function ConstellationForm({ onSubmit, onCancel }: Props) {
 
         <div className="color-picker">
           <span>星座の色</span>
-          <div className="color-swatches">
-            {COLORS.map((c) => (
+          <div className="planet-color-swatches">
+            {PLANET_COLORS.map(({ color: c, label, img }) => (
               <button
                 key={c}
                 type="button"
-                className={`swatch ${color === c ? 'selected' : ''}`}
-                style={{ backgroundColor: c }}
+                className={`planet-color-btn ${color === c ? 'selected' : ''}`}
                 onClick={() => setColor(c)}
-              />
+                aria-label={label}
+              >
+                <img src={img} alt={label} />
+              </button>
             ))}
           </div>
         </div>
@@ -67,7 +66,7 @@ export default function ConstellationForm({ onSubmit, onCancel }: Props) {
             キャンセル
           </button>
           <button type="submit" className="btn-submit" disabled={!name.trim()}>
-            夜空に刻む
+            星を選ぶ →
           </button>
         </div>
       </form>

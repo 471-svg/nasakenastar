@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, RefObject } from 'react'
+import { CATALOG_WIDTH as CANVAS_W, CATALOG_HEIGHT as CANVAS_H } from '../data/realStars'
 
 export interface Transform {
   x: number
@@ -6,23 +7,35 @@ export interface Transform {
   scale: number
 }
 
+/** キャンバスがビューポートをはみ出ないようにトランスフォームをクランプする */
+function clamp(t: Transform, vw: number, vh: number): Transform {
+  // スケール: 縦横どちらもビューポートを覆う最小値 ≤ scale ≤ 3
+  const minScale = Math.max(vw / CANVAS_W, vh / CANVAS_H)
+  const scale = Math.min(3, Math.max(minScale, t.scale))
+
+  // 平行移動: キャンバスがビューポートをはみ出ない範囲に制限
+  const x = Math.min(0, Math.max(vw - CANVAS_W * scale, t.x))
+  const y = Math.min(0, Math.max(vh - CANVAS_H * scale, t.y))
+
+  return { scale, x, y }
+}
+
 export function useCanvas(containerRef: RefObject<HTMLElement>) {
   // 初期位置: RA=6h 付近 (オリオン座あたり) を中心に表示
   const [transform, setTransform] = useState<Transform>(() => {
-    const scale = 0.18
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const minScale = Math.max(vw / CANVAS_W, vh / CANVAS_H)
+    const scale = Math.max(minScale, 0.18)
     const focusX = 2160
     const focusY = 2160
-    return {
-      scale,
-      x: window.innerWidth  / 2 - focusX * scale,
-      y: window.innerHeight / 2 - focusY * scale,
-    }
+    return clamp({ scale, x: vw / 2 - focusX * scale, y: vh / 2 - focusY * scale }, vw, vh)
   })
 
   const dragging   = useRef(false)
   const lastPos    = useRef({ x: 0, y: 0 })
   const pinchDist  = useRef(0)
-  const isDragging = useRef(false)  // ドラッグとクリックの区別用 (StarCanvas 側でも使用)
+  const isDragging = useRef(false)
 
   // ────────────────────────────────────────────────
   // マウス操作
@@ -40,7 +53,7 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
     const dy = e.clientY - lastPos.current.y
     if (Math.abs(dx) > 2 || Math.abs(dy) > 2) isDragging.current = true
     lastPos.current = { x: e.clientX, y: e.clientY }
-    setTransform((t) => ({ ...t, x: t.x + dx, y: t.y + dy }))
+    setTransform((t) => clamp({ ...t, x: t.x + dx, y: t.y + dy }, window.innerWidth, window.innerHeight))
   }, [])
 
   const onMouseUp = useCallback(() => {
@@ -54,13 +67,14 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
     const mx = e.clientX - rect.left
     const my = e.clientY - rect.top
     setTransform((t) => {
-      const newScale = Math.min(3, Math.max(0.08, t.scale * factor))
-      const ratio = newScale / t.scale
-      return {
-        scale: newScale,
+      const vw = window.innerWidth, vh = window.innerHeight
+      const raw = Math.min(3, Math.max(0.08, t.scale * factor))
+      const ratio = raw / t.scale
+      return clamp({
+        scale: raw,
         x: mx - ratio * (mx - t.x),
         y: my - ratio * (my - t.y),
-      }
+      }, vw, vh)
     })
   }, [])
 
@@ -98,13 +112,14 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
     function onTouchMove(e: TouchEvent) {
       e.preventDefault()
       const rect = el!.getBoundingClientRect()
+      const vw = window.innerWidth, vh = window.innerHeight
 
       if (e.touches.length === 1 && dragging.current) {
         const dx = e.touches[0].clientX - lastPos.current.x
         const dy = e.touches[0].clientY - lastPos.current.y
         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) isDragging.current = true
         lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-        setTransform((t) => ({ ...t, x: t.x + dx, y: t.y + dy }))
+        setTransform((t) => clamp({ ...t, x: t.x + dx, y: t.y + dy }, vw, vh))
 
       } else if (e.touches.length === 2) {
         const dist = getTouchDist(e.touches)
@@ -114,13 +129,13 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
         const my = mid.y - rect.top
 
         setTransform((t) => {
-          const newScale = Math.min(3, Math.max(0.08, t.scale * factor))
-          const ratio = newScale / t.scale
-          return {
-            scale: newScale,
+          const raw = Math.min(3, Math.max(0.08, t.scale * factor))
+          const ratio = raw / t.scale
+          return clamp({
+            scale: raw,
             x: mx - ratio * (mx - t.x),
             y: my - ratio * (my - t.y),
-          }
+          }, vw, vh)
         })
         pinchDist.current = dist
       }
@@ -131,8 +146,6 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
       if (e.touches.length < 2) pinchDist.current = 0
 
       if (e.touches.length === 0) {
-        // タップ（ドラッグなし）なら、タッチ位置の要素に click イベントを発火させる
-        // (preventDefault でブラウザ生成の click がキャンセルされているため)
         if (!isDragging.current && e.changedTouches.length === 1) {
           const touch = e.changedTouches[0]
           const target = document.elementFromPoint(touch.clientX, touch.clientY)
@@ -166,18 +179,18 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
     }
   }, [containerRef])
 
-  // ズームボタン用 (スマホ向け)
   const zoomBy = useCallback((factor: number) => {
     const cx = window.innerWidth  / 2
     const cy = window.innerHeight / 2
     setTransform((t) => {
-      const newScale = Math.min(3, Math.max(0.08, t.scale * factor))
-      const ratio = newScale / t.scale
-      return {
-        scale: newScale,
+      const vw = window.innerWidth, vh = window.innerHeight
+      const raw = Math.min(3, Math.max(0.08, t.scale * factor))
+      const ratio = raw / t.scale
+      return clamp({
+        scale: raw,
         x: cx - ratio * (cx - t.x),
         y: cy - ratio * (cy - t.y),
-      }
+      }, vw, vh)
     })
   }, [])
 
