@@ -145,6 +145,7 @@ export default function PlanetArc({
                       }} />
                   }
                   {active && <div className="planet-ring" />}
+                  <span className="planet-tag">{label}</span>
                 </button>
               )
             })}

@@ -746,6 +746,19 @@ html, body {
   50% { opacity: 1; transform: scale(1.08); }
 }
 
+.planet-tag {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-family: 'Noto Serif JP', serif;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  pointer-events: none;
+  letter-spacing: 0.04em;
+}
+
 .draw-btn-row {
   display: flex;
   justify-content: center;
