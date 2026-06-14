@@ -100,7 +100,7 @@
 :root {
   --gold: #c9a84c;
   --gold-light: #e8d5a3;
-  --sky-dark: #071535;
+  --sky-dark: #010610;
   --sky-mid: #0d2460;
   --text-light: #d4e4ff;
 }
@@ -150,9 +150,8 @@ html, body {
 /* ========= Auth ========= */
 .auth-area {
   position: fixed;
-  top: 14px;
-  /* アプリ左端+70px */
-  left: calc(50% - 125px);
+  top: 58px;
+  right: calc(50% - 85px);
   z-index: 60;
 }
 

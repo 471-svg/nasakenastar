@@ -62,10 +62,7 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true)
   const hideSplash = useCallback(() => setShowSplash(false), [])
 
-  const { user: _user, profile: _profile, loading: authLoading, signInWithGoogle, signOut, updateProfile } = useAuth()
-  // DEV: ログイン状態確認用モック（本番削除）
-  const user    = _user    ?? { id: 'mock-user-id' } as unknown as typeof _user
-  const profile = _profile ?? { id: 'mock-user-id', username: 'テストユーザー', avatarUrl: '', bio: '' } as unknown as typeof _profile
+  const { user, profile, loading: authLoading, signInWithGoogle, signOut, updateProfile } = useAuth()
 
   const [pendingForm, setPendingForm]   = useState<{ name: string; myth: string; color: string } | null>(null)
   const [showForm, setShowForm]         = useState(false)
@@ -73,8 +70,8 @@ export default function App() {
 
   // 初回ログイン: username未設定ならモーダルを表示
   useEffect(() => {
-    if (_profile && _profile.username === '') setShowNameSetup(true)
-  }, [_profile])
+    if (profile && profile.username === '') setShowNameSetup(true)
+  }, [profile])
   const [viewing, setViewing]           = useState<Constellation | null>(null)
   const [filterColor, setFilterColor]   = useState<string | null>(null)
   const [loginPrompt, setLoginPrompt]   = useState(false)
