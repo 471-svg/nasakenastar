@@ -27,6 +27,7 @@ export default function EventPage() {
       {/* 告知フライヤー */}
       <div className="event-flyer-wrap">
         <img src="/bana-.png" alt="情けNIGHT プラネタリウム" className="event-flyer-img" />
+        <img src="/manga1.png" alt="情けNIGHT comics" className="event-flyer-img" />
       </div>
 
       {/* イベント一覧 */}
