@@ -32,10 +32,11 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
     return clamp({ scale, x: vw / 2 - focusX * scale, y: vh / 2 - focusY * scale }, vw, vh)
   })
 
-  const dragging   = useRef(false)
-  const lastPos    = useRef({ x: 0, y: 0 })
-  const pinchDist  = useRef(0)
-  const isDragging = useRef(false)
+  const dragging    = useRef(false)
+  const lastPos     = useRef({ x: 0, y: 0 })
+  const pinchDist   = useRef(0)
+  const isDragging  = useRef(false)
+  const wasPinching = useRef(false)
 
   // ────────────────────────────────────────────────
   // マウス操作
@@ -51,7 +52,7 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
     if (!dragging.current) return
     const dx = e.clientX - lastPos.current.x
     const dy = e.clientY - lastPos.current.y
-    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) isDragging.current = true
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) isDragging.current = true
     lastPos.current = { x: e.clientX, y: e.clientY }
     setTransform((t) => clamp({ ...t, x: t.x + dx, y: t.y + dy }, window.innerWidth, window.innerHeight))
   }, [])
@@ -102,9 +103,12 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
       if (e.touches.length === 1) {
         dragging.current = true
         isDragging.current = false
+        wasPinching.current = false
         lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
       } else if (e.touches.length === 2) {
         dragging.current = false
+        isDragging.current = false
+        wasPinching.current = true
         pinchDist.current = getTouchDist(e.touches)
       }
     }
@@ -117,11 +121,12 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
       if (e.touches.length === 1 && dragging.current) {
         const dx = e.touches[0].clientX - lastPos.current.x
         const dy = e.touches[0].clientY - lastPos.current.y
-        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) isDragging.current = true
+        if (Math.abs(dx) > 8 || Math.abs(dy) > 8) isDragging.current = true
         lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
         setTransform((t) => clamp({ ...t, x: t.x + dx, y: t.y + dy }, vw, vh))
 
       } else if (e.touches.length === 2) {
+        wasPinching.current = true
         const dist = getTouchDist(e.touches)
         const mid  = getTouchMid(e.touches)
         const factor = dist / (pinchDist.current || dist)
@@ -146,7 +151,7 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
       if (e.touches.length < 2) pinchDist.current = 0
 
       if (e.touches.length === 0) {
-        if (!isDragging.current && e.changedTouches.length === 1) {
+        if (!isDragging.current && !wasPinching.current && e.changedTouches.length === 1) {
           const touch = e.changedTouches[0]
           const target = document.elementFromPoint(touch.clientX, touch.clientY)
           if (target) {
@@ -161,6 +166,8 @@ export function useCanvas(containerRef: RefObject<HTMLElement>) {
           }
         }
         dragging.current = false
+        isDragging.current = false
+        wasPinching.current = false
       } else if (e.touches.length === 1) {
         dragging.current = true
         isDragging.current = false
