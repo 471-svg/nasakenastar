@@ -446,7 +446,7 @@ export function buildCatalogStars(): StarData[] {
   }
 
   // ② 背景の淡い星
-  const BG_COUNT = 5000
+  const BG_COUNT = 8000
   for (let i = 0; i < BG_COUNT; i++) {
     const x = rand() * CATALOG_WIDTH
     const y = rand() * CATALOG_HEIGHT
