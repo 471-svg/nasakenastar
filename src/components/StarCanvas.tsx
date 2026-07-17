@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState, useEffect } from 'react'
+import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { StarData, Constellation, ConstellationLine } from '../types'
 import { useCanvas } from '../hooks/useCanvas'
 import { CATALOG_WIDTH as CANVAS_WIDTH, CATALOG_HEIGHT as CANVAS_HEIGHT } from '../data/realStars'
@@ -13,28 +13,65 @@ interface Props {
   onDrawStateChange: (state: { selectedCount: number; canFinish: boolean }) => void
 }
 
-function starClass(size: number): string | undefined {
-  if (size >= 3)   return 'star-giant'
-  if (size >= 2)   return 'star-bright'
-  if (size >= 1.5) return 'star-mid'
-  return undefined  // 小さい星はアニメなし
-}
+// Canvas解像度: 1/6スケールで描画（メモリ節約）
+const CANVAS_SCALE = 1 / 6
 
 export default function StarCanvas({ stars, constellations, drawMode, finishDrawRef, onConstellationComplete, onConstellationClick, onDrawStateChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const bgCanvasRef  = useRef<HTMLCanvasElement>(null)
   const { transform, onMouseDown, onMouseMove, onMouseUp, onWheel, isDragging } = useCanvas(containerRef)
 
   const [selectedStars, setSelectedStars] = useState<string[]>([])
   const [draftLines, setDraftLines] = useState<ConstellationLine[]>([])
   const [hoverStar, setHoverStar] = useState<string | null>(null)
 
-  const starMap = new Map(stars.map((s) => [s.id, s]))
+  const starMap = useMemo(() => new Map(stars.map((s) => [s.id, s])), [stars])
 
-  // 星ID → 星座 の逆引きマップ（O(n²) → O(1)）
-  const starToConsMap = new Map<string, Constellation>()
-  for (const c of constellations) {
-    for (const sid of (c.starIds ?? [])) starToConsMap.set(sid, c)
-  }
+  const starToConsMap = useMemo(() => {
+    const m = new Map<string, Constellation>()
+    for (const c of constellations) {
+      for (const sid of (c.starIds ?? [])) m.set(sid, c)
+    }
+    return m
+  }, [constellations])
+
+  // 星座に含まれる星IDのセット（SVGで描く星）
+  const consStarIds = useMemo(() => {
+    const s = new Set<string>()
+    for (const c of constellations) {
+      for (const sid of (c.starIds ?? [])) s.add(sid)
+    }
+    return s
+  }, [constellations])
+
+  // 背景星をcanvasに描画（初回 + stars変更時）
+  useEffect(() => {
+    const canvas = bgCanvasRef.current
+    if (!canvas) return
+    const cw = Math.ceil(CANVAS_WIDTH  * CANVAS_SCALE)
+    const ch = Math.ceil(CANVAS_HEIGHT * CANVAS_SCALE)
+    canvas.width  = cw
+    canvas.height = ch
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    ctx.clearRect(0, 0, cw, ch)
+
+    for (const star of stars) {
+      // 星座の星はSVGで描くのでスキップ
+      if (consStarIds.has(star.id)) continue
+      const sx = star.x * CANVAS_SCALE
+      const sy = star.y * CANVAS_SCALE
+      const r  = Math.max(0.4, star.size * CANVAS_SCALE)
+      const opacity = star.size >= 3 ? 0.97 : star.size >= 1.5 ? 0.90 : star.size >= 1 ? 0.80 : 0.60
+      ctx.beginPath()
+      ctx.arc(sx, sy, r, 0, Math.PI * 2)
+      ctx.fillStyle = star.color ?? '#e8eeff'
+      ctx.globalAlpha = opacity
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  }, [stars, consStarIds])
 
   // drawModeがfalseになったらリセット
   useEffect(() => {
@@ -44,7 +81,6 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
     }
   }, [drawMode])
 
-  // 描画状態を親に通知
   useEffect(() => {
     onDrawStateChange({ selectedCount: selectedStars.length, canFinish: draftLines.length > 0 })
   }, [selectedStars.length, draftLines.length])
@@ -54,16 +90,10 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
       if (!drawMode) return
       if (isDragging.current) return
       e.stopPropagation()
-
-      if (selectedStars.length === 0) {
-        setSelectedStars([starId])
-        return
-      }
+      if (selectedStars.length === 0) { setSelectedStars([starId]); return }
       const last = selectedStars[selectedStars.length - 1]
       if (last === starId) return
-
-      const newLine: ConstellationLine = { from: last, to: starId }
-      setDraftLines((prev) => [...prev, newLine])
+      setDraftLines((prev) => [...prev, { from: last, to: starId }])
       setSelectedStars((prev) => [...prev, starId])
     },
     [drawMode, selectedStars]
@@ -71,18 +101,30 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
 
   const finishDraw = () => {
     if (draftLines.length === 0) return
-    const uniqueIds = [...new Set(selectedStars)]
-    onConstellationComplete(draftLines, uniqueIds)
+    onConstellationComplete(draftLines, [...new Set(selectedStars)])
     setSelectedStars([])
     setDraftLines([])
   }
 
-  // 親からfinishDrawを呼べるようにrefに登録
   useEffect(() => {
     if (finishDrawRef) finishDrawRef.current = finishDraw
   })
 
   const isStarSelected = (id: string) => selectedStars.includes(id)
+
+  const wrapStyle: React.CSSProperties = {
+    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+    transformOrigin: '0 0',
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    willChange: 'transform',
+  }
+
+  // SVGで描く星: 星座に含まれる星 + drawMode時は全星
+  const svgStars = drawMode ? stars : stars.filter((s) => consStarIds.has(s.id))
 
   return (
     <div className="canvas-root" data-finish-draw={draftLines.length > 0 ? 'yes' : 'no'}>
@@ -94,21 +136,25 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
         onWheel={onWheel}
+        style={{ position: 'relative' }}
       >
-        <svg
+        {/* 背景グラデーション */}
+        <div style={{ ...wrapStyle, background: 'radial-gradient(ellipse at 40% 45%, #0e1f4a 0%, #060e28 60%, #010610 100%)' }} />
+
+        {/* 背景星 canvas */}
+        <canvas
+          ref={bgCanvasRef}
           style={{
-            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-            transformOrigin: '0 0',
-            width: CANVAS_WIDTH,
-            height: CANVAS_HEIGHT,
+            ...wrapStyle,
+            imageRendering: 'pixelated',
           }}
+        />
+
+        {/* SVG: 星雲・星座ライン・インタラクティブ星 */}
+        <svg
+          style={{ ...wrapStyle, overflow: 'visible' }}
         >
           <defs>
-            <radialGradient id="bgGrad" cx="40%" cy="45%" r="75%">
-              <stop offset="0%" stopColor="#0e1f4a" />
-              <stop offset="60%" stopColor="#060e28" />
-              <stop offset="100%" stopColor="#010610" />
-            </radialGradient>
             <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="3" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
@@ -121,47 +167,38 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
               <feGaussianBlur stdDeviation="4" result="blur" />
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
-
-            {/* 星雲グラデーション */}
-            {/* M42 オリオン大星雲 — 赤みがかった放出星雲 */}
             <radialGradient id="neb-m42" cx="50%" cy="45%" r="50%">
               <stop offset="0%"   stopColor="#ff6080" stopOpacity={0.22} />
               <stop offset="35%"  stopColor="#d03060" stopOpacity={0.10} />
               <stop offset="70%"  stopColor="#8010a0" stopOpacity={0.04} />
               <stop offset="100%" stopColor="#400060" stopOpacity={0} />
             </radialGradient>
-            {/* M45 プレアデス — 青い反射星雲 */}
             <radialGradient id="neb-m45" cx="50%" cy="50%" r="50%">
               <stop offset="0%"   stopColor="#80b0ff" stopOpacity={0.18} />
               <stop offset="40%"  stopColor="#4060e0" stopOpacity={0.08} />
               <stop offset="100%" stopColor="#1020a0" stopOpacity={0} />
             </radialGradient>
-            {/* いて座 銀河中心 — 濃いオレンジ〜赤 */}
             <radialGradient id="neb-sgr" cx="50%" cy="50%" r="50%">
               <stop offset="0%"   stopColor="#ff8040" stopOpacity={0.20} />
               <stop offset="30%"  stopColor="#e04020" stopOpacity={0.12} />
               <stop offset="65%"  stopColor="#901020" stopOpacity={0.05} />
               <stop offset="100%" stopColor="#400008" stopOpacity={0} />
             </radialGradient>
-            {/* はくちょう座 北アメリカ星雲 — 赤+青 */}
             <radialGradient id="neb-cyg" cx="50%" cy="50%" r="50%">
               <stop offset="0%"   stopColor="#ff4070" stopOpacity={0.16} />
               <stop offset="40%"  stopColor="#6040c0" stopOpacity={0.08} />
               <stop offset="100%" stopColor="#200040" stopOpacity={0} />
             </radialGradient>
-            {/* さそり座 — ピンク〜赤 */}
             <radialGradient id="neb-sco" cx="50%" cy="50%" r="50%">
               <stop offset="0%"   stopColor="#ff5060" stopOpacity={0.18} />
               <stop offset="45%"  stopColor="#c01040" stopOpacity={0.07} />
               <stop offset="100%" stopColor="#600010" stopOpacity={0} />
             </radialGradient>
-            {/* カリーナ星雲 — 明るいオレンジ〜ピンク */}
             <radialGradient id="neb-car" cx="50%" cy="40%" r="50%">
               <stop offset="0%"   stopColor="#ff7050" stopOpacity={0.20} />
               <stop offset="35%"  stopColor="#e03060" stopOpacity={0.10} />
               <stop offset="100%" stopColor="#600020" stopOpacity={0} />
             </radialGradient>
-            {/* ペルセウス二重星団 — 薄い青 */}
             <radialGradient id="neb-per" cx="50%" cy="50%" r="50%">
               <stop offset="0%"   stopColor="#60a0ff" stopOpacity={0.14} />
               <stop offset="50%"  stopColor="#2040c0" stopOpacity={0.05} />
@@ -169,61 +206,34 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
             </radialGradient>
           </defs>
 
-          <rect width={CANVAS_WIDTH} height={CANVAS_HEIGHT} fill="url(#bgGrad)" />
-
-          {/* 星雲 (装飾のみ・クリック不可) */}
+          {/* 星雲 */}
           <g style={{ pointerEvents: 'none' }}>
-            {/* M42 オリオン大星雲 RA=5.59h Dec=-5.39° */}
-            <ellipse cx={2012} cy={2289} rx={700} ry={480}
-              fill="url(#neb-m42)" transform="rotate(-15, 2012, 2289)" />
-            <ellipse cx={2012} cy={2289} rx={320} ry={220}
-              fill="url(#neb-m42)" transform="rotate(-15, 2012, 2289)" />
-
-            {/* M45 プレアデス RA=3.79h Dec=24.11° */}
-            <ellipse cx={1364} cy={1580} rx={550} ry={380}
-              fill="url(#neb-m45)" transform="rotate(10, 1364, 1580)" />
-
-            {/* いて座 銀河中心 RA=17.76h Dec=-29° */}
-            <ellipse cx={6394} cy={2855} rx={1300} ry={480}
-              fill="url(#neb-sgr)" transform="rotate(5, 6394, 2855)" />
-            <ellipse cx={6394} cy={2855} rx={600} ry={220}
-              fill="url(#neb-sgr)" transform="rotate(5, 6394, 2855)" />
-            <ellipse cx={6550} cy={2780} rx={700} ry={300}
-              fill="url(#neb-sgr)" transform="rotate(-8, 6550, 2780)" />
-
-            {/* はくちょう座 RA=20.7h Dec=44° */}
-            <ellipse cx={7452} cy={1123} rx={900} ry={400}
-              fill="url(#neb-cyg)" transform="rotate(-25, 7452, 1123)" />
-            <ellipse cx={7452} cy={1123} rx={400} ry={180}
-              fill="url(#neb-cyg)" transform="rotate(-25, 7452, 1123)" />
-
-            {/* さそり座 RA=16.5h Dec=-26° */}
-            <ellipse cx={5940} cy={2793} rx={850} ry={350}
-              fill="url(#neb-sco)" transform="rotate(15, 5940, 2793)" />
-            <ellipse cx={5940} cy={2793} rx={350} ry={150}
-              fill="url(#neb-sco)" transform="rotate(15, 5940, 2793)" />
-
-            {/* カリーナ星雲 RA=10.75h Dec=-59.87° */}
-            <ellipse cx={3870} cy={3594} rx={750} ry={380}
-              fill="url(#neb-car)" transform="rotate(-20, 3870, 3594)" />
-            <ellipse cx={3870} cy={3594} rx={280} ry={140}
-              fill="url(#neb-car)" transform="rotate(-20, 3870, 3594)" />
-
-            {/* ペルセウス RA=2.35h Dec=57.14° */}
-            <ellipse cx={846} cy={789} rx={450} ry={280}
-              fill="url(#neb-per)" transform="rotate(8, 846, 789)" />
+            <ellipse cx={2012} cy={2289} rx={700} ry={480} fill="url(#neb-m42)" transform="rotate(-15, 2012, 2289)" />
+            <ellipse cx={2012} cy={2289} rx={320} ry={220} fill="url(#neb-m42)" transform="rotate(-15, 2012, 2289)" />
+            <ellipse cx={1364} cy={1580} rx={550} ry={380} fill="url(#neb-m45)" transform="rotate(10, 1364, 1580)" />
+            <ellipse cx={6394} cy={2855} rx={1300} ry={480} fill="url(#neb-sgr)" transform="rotate(5, 6394, 2855)" />
+            <ellipse cx={6394} cy={2855} rx={600} ry={220} fill="url(#neb-sgr)" transform="rotate(5, 6394, 2855)" />
+            <ellipse cx={6550} cy={2780} rx={700} ry={300} fill="url(#neb-sgr)" transform="rotate(-8, 6550, 2780)" />
+            <ellipse cx={7452} cy={1123} rx={900} ry={400} fill="url(#neb-cyg)" transform="rotate(-25, 7452, 1123)" />
+            <ellipse cx={7452} cy={1123} rx={400} ry={180} fill="url(#neb-cyg)" transform="rotate(-25, 7452, 1123)" />
+            <ellipse cx={5940} cy={2793} rx={850} ry={350} fill="url(#neb-sco)" transform="rotate(15, 5940, 2793)" />
+            <ellipse cx={5940} cy={2793} rx={350} ry={150} fill="url(#neb-sco)" transform="rotate(15, 5940, 2793)" />
+            <ellipse cx={3870} cy={3594} rx={750} ry={380} fill="url(#neb-car)" transform="rotate(-20, 3870, 3594)" />
+            <ellipse cx={3870} cy={3594} rx={280} ry={140} fill="url(#neb-car)" transform="rotate(-20, 3870, 3594)" />
+            <ellipse cx={846}  cy={789}  rx={450} ry={280} fill="url(#neb-per)" transform="rotate(8, 846, 789)" />
           </g>
 
+          {/* 星座ライン */}
           {constellations.map((c) =>
             c.lines.map((line, i) => {
               const from = starMap.get(line.from)
-              const to = starMap.get(line.to)
+              const to   = starMap.get(line.to)
               if (!from || !to) return null
               return (
                 <g key={`${c.id}-${i}`}>
                   {!drawMode && (
                     <line x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                      stroke="transparent" strokeWidth={18} style={{ cursor: 'pointer' }}
+                      stroke="transparent" strokeWidth={20} style={{ cursor: 'pointer' }}
                       onClick={(e) => { if (!isDragging.current) { e.stopPropagation(); onConstellationClick(c) } }}
                     />
                   )}
@@ -236,9 +246,10 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
             })
           )}
 
+          {/* 下書きライン */}
           {draftLines.map((line, i) => {
             const from = starMap.get(line.from)
-            const to = starMap.get(line.to)
+            const to   = starMap.get(line.to)
             if (!from || !to) return null
             return (
               <line key={`draft-${i}`}
@@ -248,28 +259,28 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
             )
           })}
 
-          {stars.map((star) => {
-            const sel = isStarSelected(star.id)
-            const hover = hoverStar === star.id
+          {/* 星座の星 + drawMode時は全星 */}
+          {svgStars.map((star) => {
+            const sel      = isStarSelected(star.id)
+            const hover    = hoverStar === star.id
             const ownerCons = starToConsMap.get(star.id)
-            const inCons = !!ownerCons
-            const cls = starClass(star.size)
+            const inCons   = !!ownerCons
 
             return (
               <g key={star.id}>
-                {(drawMode || inCons) && (
-                  <circle cx={star.x} cy={star.y} r={drawMode ? 18 : Math.max(12, star.size * 5)}
-                    fill="transparent"
-                    style={{ cursor: drawMode ? 'pointer' : inCons ? 'pointer' : 'default' }}
-                    onMouseEnter={() => setHoverStar(star.id)}
-                    onMouseLeave={() => setHoverStar(null)}
-                    onClick={(e) => {
-                      if (isDragging.current) return
-                      if (drawMode) { handleStarClick(e, star.id) }
-                      else if (ownerCons) { e.stopPropagation(); onConstellationClick(ownerCons) }
-                    }}
-                  />
-                )}
+                <circle
+                  cx={star.x} cy={star.y}
+                  r={drawMode ? 20 : Math.max(14, star.size * 6)}
+                  fill="transparent"
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => setHoverStar(star.id)}
+                  onMouseLeave={() => setHoverStar(null)}
+                  onClick={(e) => {
+                    if (isDragging.current) return
+                    if (drawMode) { handleStarClick(e, star.id) }
+                    else if (ownerCons) { e.stopPropagation(); onConstellationClick(ownerCons) }
+                  }}
+                />
                 {sel && (
                   <circle cx={star.x} cy={star.y} r={star.size * 6}
                     fill="#7fb8ff" fillOpacity={0.18} filter="url(#selectGlow)"
@@ -287,18 +298,15 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
                   cx={star.x} cy={star.y}
                   r={sel ? star.size * 2 : hover && inCons ? star.size * 1.5 : star.size}
                   fill={sel ? '#ffffff' : inCons ? '#d0e8ff' : (star.color ?? '#e8eeff')}
-                  fillOpacity={
-                    sel ? 1 : hover && inCons ? 1 : hover ? 0.98 :
-                    star.size >= 3 ? 0.97 : star.size >= 1.5 ? 0.90 : 0.75
-                  }
-                  filter={star.size >= 2 || (hover && inCons) ? 'url(#brightGlow)' : undefined}
-                  className={sel ? undefined : cls}
-                  style={{ '--tw': `${2.5 + star.twinkle}s`, pointerEvents: 'none' } as React.CSSProperties}
+                  fillOpacity={sel ? 1 : hover && inCons ? 1 : 0.95}
+                  filter="url(#brightGlow)"
+                  style={{ pointerEvents: 'none' }}
                 />
               </g>
             )
           })}
 
+          {/* 星座名ラベル */}
           {constellations.map((c) => {
             const first = starMap.get(c.starIds?.[0])
             if (!first) return null
