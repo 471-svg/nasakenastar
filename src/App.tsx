@@ -13,6 +13,7 @@ import { useConstellations } from './hooks/useConstellations'
 import { useAuth } from './hooks/useAuth'
 import { buildCatalogStars } from './data/realStars'
 import { ConstellationLine, Constellation } from './types'
+import TutorialModal from './components/TutorialModal'
 const STARS = buildCatalogStars()
 
 // ── DEV用モック星座データ ──────────────────────────────
@@ -132,6 +133,7 @@ export default function App() {
   return (
     <>
       {showSplash && <SplashScreen onFinished={hideSplash} />}
+      <TutorialModal />
 
       {/* 初回ログイン: 天文学者名登録 */}
       {showNameSetup && user && (

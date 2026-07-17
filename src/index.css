@@ -1846,3 +1846,67 @@ html, body {
   background: linear-gradient(135deg, rgba(100,130,220,0.5), rgba(60,90,180,0.6));
 }
 .admin-submit:disabled { opacity: 0.4; cursor: default; }
+
+/* ========= Tutorial Modal ========= */
+.tutorial-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  background: rgba(1,6,16,0.75);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.tutorial-card {
+  position: relative;
+  background: linear-gradient(160deg, rgba(10,20,50,0.97), rgba(5,12,35,0.97));
+  border: 1px solid rgba(160,190,255,0.2);
+  border-radius: 20px;
+  padding: 40px 32px 32px;
+  width: min(88vw, 340px);
+  text-align: center;
+  box-shadow: 0 0 40px rgba(80,120,255,0.15);
+  animation: myth-in 0.3s ease-out;
+}
+.tutorial-skip {
+  position: absolute; top: 16px; right: 16px;
+  background: none; border: none; color: rgba(180,200,255,0.4);
+  font-size: 12px; cursor: pointer; font-family: 'Noto Serif JP', serif;
+}
+.tutorial-icon {
+  font-size: 40px; margin-bottom: 16px; line-height: 1;
+}
+.tutorial-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 18px; font-weight: 600;
+  color: rgba(210,225,255,0.95);
+  margin: 0 0 12px;
+}
+.tutorial-desc {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 13px; line-height: 1.8;
+  color: rgba(180,200,255,0.75);
+  white-space: pre-wrap; margin: 0 0 24px;
+}
+.tutorial-dots {
+  display: flex; justify-content: center; gap: 6px; margin-bottom: 24px;
+}
+.tutorial-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(140,160,220,0.25);
+  transition: background 0.2s;
+}
+.tutorial-dot--active {
+  background: rgba(160,190,255,0.8);
+}
+.tutorial-next {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(160,190,255,0.25);
+  background: linear-gradient(135deg, rgba(60,90,180,0.4), rgba(40,70,160,0.5));
+  color: rgba(210,225,255,0.95);
+  font-family: 'Noto Serif JP', serif;
+  font-size: 14px; cursor: pointer;
+  transition: background 0.2s;
+}
+.tutorial-next:hover {
+  background: linear-gradient(135deg, rgba(80,110,200,0.5), rgba(60,90,180,0.6));
+}

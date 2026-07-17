@@ -13,11 +13,11 @@ interface Props {
   onDrawStateChange: (state: { selectedCount: number; canFinish: boolean }) => void
 }
 
-function starClass(size: number): string {
+function starClass(size: number): string | undefined {
   if (size >= 3)   return 'star-giant'
   if (size >= 2)   return 'star-bright'
   if (size >= 1.5) return 'star-mid'
-  return 'star-dim'
+  return undefined  // 小さい星はアニメなし
 }
 
 export default function StarCanvas({ stars, constellations, drawMode, finishDrawRef, onConstellationComplete, onConstellationClick, onDrawStateChange }: Props) {
@@ -29,6 +29,12 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
   const [hoverStar, setHoverStar] = useState<string | null>(null)
 
   const starMap = new Map(stars.map((s) => [s.id, s]))
+
+  // 星ID → 星座 の逆引きマップ（O(n²) → O(1)）
+  const starToConsMap = new Map<string, Constellation>()
+  for (const c of constellations) {
+    for (const sid of (c.starIds ?? [])) starToConsMap.set(sid, c)
+  }
 
   // drawModeがfalseになったらリセット
   useEffect(() => {
@@ -245,7 +251,7 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
           {stars.map((star) => {
             const sel = isStarSelected(star.id)
             const hover = hoverStar === star.id
-            const ownerCons = constellations.find((c) => c.starIds?.includes(star.id))
+            const ownerCons = starToConsMap.get(star.id)
             const inCons = !!ownerCons
             const cls = starClass(star.size)
 
