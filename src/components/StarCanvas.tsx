@@ -112,17 +112,6 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
 
   const isStarSelected = (id: string) => selectedStars.includes(id)
 
-  const wrapStyle: React.CSSProperties = {
-    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-    transformOrigin: '0 0',
-    width: CANVAS_WIDTH,
-    height: CANVAS_HEIGHT,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    willChange: 'transform',
-  }
-
   // SVGで描く星: 星座に含まれる星 + drawMode時は全星
   const svgStars = drawMode ? stars : stars.filter((s) => consStarIds.has(s.id))
 
@@ -138,21 +127,31 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
         onWheel={onWheel}
         style={{ position: 'relative' }}
       >
-        {/* 背景グラデーション */}
-        <div style={{ ...wrapStyle, background: 'radial-gradient(ellipse at 40% 45%, #0e1f4a 0%, #060e28 60%, #010610 100%)' }} />
+        {/* 全レイヤーを1つのdivでまとめてトランスフォーム */}
+        <div style={{
+          transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+          transformOrigin: '0 0',
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+          position: 'absolute',
+          top: 0, left: 0,
+          willChange: 'transform',
+          background: 'radial-gradient(ellipse at 40% 45%, #0e1f4a 0%, #060e28 60%, #010610 100%)',
+        }}>
 
         {/* 背景星 canvas */}
         <canvas
           ref={bgCanvasRef}
           style={{
-            ...wrapStyle,
+            position: 'absolute', top: 0, left: 0,
+            width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
             imageRendering: 'pixelated',
           }}
         />
 
         {/* SVG: 星雲・星座ライン・インタラクティブ星 */}
         <svg
-          style={{ ...wrapStyle, overflow: 'visible' }}
+          style={{ position: 'absolute', top: 0, left: 0, width: CANVAS_WIDTH, height: CANVAS_HEIGHT, overflow: 'visible' }}
         >
           <defs>
             <filter id="lineGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -321,6 +320,7 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
             )
           })}
         </svg>
+        </div>{/* transform wrapper */}
       </div>
     </div>
   )
