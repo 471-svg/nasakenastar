@@ -112,11 +112,7 @@ export default function App() {
 
   const handleStartDraw = () => {
     if (!user) { setLoginPrompt(true); return }
-    const myCount = constellations.filter((c) => c.authorId === user.id).length
-    if (myCount >= 10) {
-      alert('星座の記録は10座までです。古い星座を削除してから新しく刻んでください。')
-      return
-    }
+
     setShowForm(true)
   }
 
