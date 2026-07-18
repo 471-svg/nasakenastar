@@ -17,7 +17,7 @@
 }
 
 .splash {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 200;
   background:
@@ -116,13 +116,14 @@ html, body {
 
 #root {
   width: 100%;
-  max-width: 390px;
+  max-width: 430px;
   height: 100dvh;
   overflow: hidden;
   background: var(--sky-dark);
   color: var(--text-light);
   font-family: 'Noto Serif JP', serif;
   position: relative;
+  contain: layout style;
 }
 
 /* ========= App ========= */
@@ -135,7 +136,7 @@ html, body {
 
 /* ========= App logo ========= */
 .app-logo {
-  position: fixed;
+  position: absolute;
   top: 12px;
   /* デスクトップでも390pxアプリ左端基準: calc(50% - 195px + 12px) */
   left: calc(50% - 183px);
@@ -149,7 +150,7 @@ html, body {
 
 /* ========= Auth ========= */
 .auth-area {
-  position: fixed;
+  position: absolute;
   top: 58px;
   right: calc(50% - 85px);
   z-index: 60;
@@ -205,7 +206,7 @@ html, body {
 }
 
 .auth-menu-backdrop {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 59;
 }
@@ -365,7 +366,7 @@ html, body {
 
 /* ========= Demo banner ========= */
 .demo-banner {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
@@ -414,7 +415,7 @@ html, body {
 
 /* ========= Toolbar ========= */
 .toolbar {
-  position: fixed;
+  position: absolute;
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
@@ -553,7 +554,7 @@ html, body {
 
 /* ========= Color filter ========= */
 .color-filter {
-  position: fixed;
+  position: absolute;
   left: 18px;
   top: 50%;
   transform: translateY(-50%);
@@ -646,7 +647,7 @@ html, body {
 
 /* ========= Sun button ========= */
 .sun-btn {
-  position: fixed;
+  position: absolute;
   top: -45px;
   /* アプリ右端+45px: calc(50% - 195px + 45px) = calc(50% - 150px) */
   right: calc(50% - 240px);
@@ -667,14 +668,14 @@ html, body {
 }
 
 .panel-backdrop {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 59;
 }
 
 /* ========= Planet arc ========= */
 .planet-arc-wrap {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
@@ -800,7 +801,7 @@ html, body {
 
 /* ========= Panel ========= */
 .panel {
-  position: fixed;
+  position: absolute;
   top: 60px;
   /* Eventsボタンと同じ右寄り位置 */
   right: calc(50% - 183px);
@@ -920,7 +921,7 @@ html, body {
 
 /* ========= MythCard ========= */
 .myth-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 80;
   display: flex;
@@ -1126,7 +1127,7 @@ html, body {
 
 /* ========= Form overlay ========= */
 .form-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 80;
   display: flex;
@@ -1549,7 +1550,7 @@ html, body {
 
 /* ========= Event link button (star page) ========= */
 .event-link-btn {
-  position: fixed;
+  position: absolute;
   /* 太陽画像の左隣: 太陽左端(x≈285)の左に配置 */
   top: 20px;
   right: calc(50% - 85px);
@@ -1744,7 +1745,7 @@ html, body {
 
 /* ── Admin form ── */
 .admin-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 80;
   background: rgba(0,0,0,0.7);
@@ -1857,7 +1858,7 @@ html, body {
 
 /* ========= Tutorial Modal ========= */
 .tutorial-overlay {
-  position: fixed; inset: 0; z-index: 9000;
+  position: absolute; inset: 0; z-index: 9000;
   background: rgba(1,6,16,0.75);
   display: flex; align-items: center; justify-content: center;
   backdrop-filter: blur(4px);
