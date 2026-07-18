@@ -139,13 +139,13 @@ export default function StarCanvas({ stars, constellations, drawMode, finishDraw
           background: 'radial-gradient(ellipse at 40% 45%, #0e1f4a 0%, #060e28 60%, #010610 100%)',
         }}>
 
-        {/* 背景星 canvas */}
+        {/* 背景星 canvas（バッファサイズのみ、CSSスケールで拡大） */}
         <canvas
           ref={bgCanvasRef}
           style={{
             position: 'absolute', top: 0, left: 0,
-            width: CANVAS_WIDTH, height: CANVAS_HEIGHT,
-            imageRendering: 'pixelated',
+            transform: `scale(${1 / CANVAS_SCALE})`,
+            transformOrigin: '0 0',
           }}
         />
 
