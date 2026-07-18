@@ -924,10 +924,15 @@ html, body {
   inset: 0;
   z-index: 80;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: rgba(0, 0, 0, 0.62);
   backdrop-filter: blur(6px);
+  overflow-y: auto;
+  padding: 24px 0 env(safe-area-inset-bottom, 24px);
+}
+.myth-overlay > * {
+  margin: auto 0;
 }
 
 .myth-card-inner {
@@ -1125,19 +1130,22 @@ html, body {
   inset: 0;
   z-index: 80;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(6px);
+  overflow-y: auto;
+  padding: 24px 0 env(safe-area-inset-bottom, 24px);
 }
 
 .constellation-form {
   background: rgba(4, 11, 38, 0.97);
   border: 1px solid rgba(180, 160, 100, 0.3);
   border-radius: 16px;
-  padding: 36px 40px;
+  padding: 28px 24px;
   width: min(480px, 92vw);
   box-shadow: 0 0 50px rgba(80, 120, 255, 0.12);
+  margin: auto 0;
 }
 
 .constellation-form h2 {
