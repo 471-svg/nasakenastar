@@ -91,7 +91,7 @@ export default function MythCard({ constellation, currentUserId, onClose, onDele
             className={`myth-btn-like ${likedByMe ? 'liked' : ''}`}
             onClick={toggleLike}
           >
-            {likedByMe ? '♥' : '♡'} 情けいいね {likeCount > 0 && <span className="like-count">{likeCount}</span>}
+            {likedByMe ? '♥' : '♡'} ナサケナイイネ {likeCount > 0 && <span className="like-count">{likeCount}</span>}
           </button>
         </div>
 
